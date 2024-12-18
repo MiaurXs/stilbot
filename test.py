@@ -1,55 +1,61 @@
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types
-from aiogram.filters.command import Command
 import sqlite3
 import environ
 import re
 import random
 import time
+import aiogram.utils.markdown as md
+from aiogram import Bot, Dispatcher, types, executor
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+import sys
+import config
+import re
+import aiohttp
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import StatesGroup, State
+from aiogram.utils.markdown import hlink
+from config import Config
+from aiogram.types import (
+    CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, Message,
+)
+from aiogram import Bot, Dispatcher, executor, types
+import os
+from aiogram_dialog.widgets.text import Format, Const
+from aiogram_dialog.widgets.kbd import Button
+from aiogram_dialog import Window
+from aiogram import Bot, Dispatcher, executor, types # Импортирование необходимых библиотек
+import logging
+import keys as kb
 
-base = sqlite3.connect('reviewers.db')
-cursor = base.cursor()
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS Users (
-id INTEGER PRIMARY KEY,
-id_tg INTEGER,
-gitlab TEXT NOT NULL,
-username TEXT NOT NULL,
-first_name TEXT NOT NULL,
-last_name TEXT NOT NULL,
-is_teamlead INTEGER
-)
-''')
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS reviewers (
-author TEXT NOT NULL,
-reviewers TEXT NOT NULL
-)
-''')
 
 env = environ.Env()
 environ.Env.read_env()
 TEAMLEAD = env('TEAMLEAD')
-print(TEAMLEAD)
+#print(TEAMLEAD)
 token = env('token')
 
 logging.basicConfig(level=logging.INFO)
-dp = Dispatcher()
+storage = MemoryStorage()
 bot = Bot(token=token)
+dp = Dispatcher(bot, storage=MemoryStorage())
 
-@dp.message(Command("start"))
+@dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    id_tg = message.from_user.id
-    await bot.send_message(id_tg, "message_text")
-    await message.answer('Привет ✌️\nнажми сюда  >>>  /reg\n/help - все команды')
+    await message.answer('Кнопочки', reply_markup=kb.keyboardBtns)
 
+# Хендлер для обычной клавиатуры
+@dp.message_handler(text=['Один'])
+async def keyboardFunc(message: types.Message):
+    if message.text == 'Один':
+        await message.answer('Кнопка "Один" нажата :)')
 
+@dp.message_handler(text=['Два'])
+async def keyboardFunc(message: types.Message):
+    if message.text == 'Два':
+        await message.answer('Кнопка "Два" нажата :)')
 
-@dp.message(Command("reg"))
-async def reg(message: types.Message):
-    global gitlab
-    gitlab = await message.answer('Ваше имя в gitlab: ')
 
 
 async def main():
@@ -57,4 +63,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
